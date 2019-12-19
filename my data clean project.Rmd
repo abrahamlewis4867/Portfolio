@@ -1,0 +1,315 @@
+---
+title: "Yemen Cholera Outbreak"
+author: "Abraham Lewis"
+date: "October 24, 2018"
+output: html_notebook
+
+---
+  -From [Centers for Disease Control and Prevention]
+https://www.cdc.gov/cholera/general/index.html  
+Cholera is an acute, diarrheal illness caused by infection of the intestine with the toxigenic bacterium Vibrio cholerae serogroup O1 or O139.  The infection is often mild or without symptoms, but can sometimes be severe. Approximately one in 10 (10%) infected persons will have severe disease characterized by profuse watery diarrhea, vomiting, and leg cramps. In these people, rapid loss of body fluids leads to dehydration and shock. Without treatment, death can occur within hours.
+
+  -Cholera is most likely to be found and spread in places with inadequate water treatment, poor sanitation, and inadequate hygiene.
+
+From [World Health Organization]
+http://www.who.int/
+` -Devastation of Yemeni infrastructure, health, water and sanitation systems and facilities by Saudi-led coalition air strikes led to the spread of cholera.
+The outbreak is a result of the ongoing war led by the Saudi-led coalition against Houthis in Yemen since March 2015. As stated by in the statement of the UNICEF and WHO executive directors: "This deadly cholera outbreak is the direct consequence of two years of heavy conflict. Collapsing health, water and sanitation systems have cut off 14.5 million people from regular access to clean water and sanitation, increasing the ability of the disease to spread. Rising rates of malnutrition have weakened children's health and made them more vulnerable to disease. The outbreak is of an "unprecedented scale", according to the World Health Organization (WHO), one of the worst in recorded history.
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+getwd()
+```
+
+
+
+
+
+
+```{r}
+library(readr)
+Yemen_data<- read_csv("yemen-data/Yemen Cholera Outbreak Epidemiology Data - Data_Country_Level.csv")
+
+```
+
+
+```{r}
+glimpse(Yemen_data)
+
+```
+
+ 
+```{r}
+dim(Yemen_data) 
+ 
+```
+ So there are 7 columns of charecter varibles with 148 rows of data over about year of reports with the longest gaps between the reports bieng about 10 days and averging about 5
+ 
+```{r}
+which(!complete.cases(Yemen_data))
+
+```
+I first removed the na values.
+
+```{r}
+mydataclean<-na.omit(Yemen_data)
+
+```
+
+
+```{r}
+dim(mydataclean)
+```
+
+
+```{r}
+complete.cases(mydataclean)
+```
+
+
+
+
+
+
+```{r}
+mydata<-tbl_df(mydataclean)
+```
+
+
+
+
+
+
+```{r}
+mydata
+
+```
+I thought the hash -while bieng desciprive- looked out of place so i removed it
+
+```{r}
+ mydatacleaner<- mydata[-1, ]
+```
+
+```{r}
+dim(mydatacleaner)
+```
+
+
+Then I did some cosmetic stuff like renaming some of the columns;and I also made the variables more functional.
+
+
+```{r}
+mydatacleaner <- rename(mydatacleaner,CFR=`CFR (%)`, AR= `Attack Rate (per 1000)` )                     
+
+
+```
+
+
+
+
+```{r}
+
+ mydatacleaner$Date=as.Date(mydatacleaner$Date)
+```
+
+
+
+```{r}
+mydatacleaner$Cases=as.numeric(mydatacleaner$Cases,na.rm = TRUE)
+```
+
+
+```{r}
+mydatacleaner$Deaths=as.numeric(mydatacleaner$Deaths,na.rm=TRUE)
+```
+
+
+
+
+```{r}
+mydatacleaner$CFR=as.numeric(mydatacleaner$CFR,na.rm=TRUE)
+```
+
+
+```{r}
+ mydatacleaner$AR=as.numeric(mydatacleaner$AR)
+```
+
+
+```{r}
+ mydatacleaner$`Bulletin Type`=as.factor(mydatacleaner$`Bulletin Type`)
+       
+```
+    
+    
+```{r}
+
+mydatacleaner$`Bulletin URL`=as.factor(mydatacleaner$`Bulletin URL`)
+
+```
+
+So to make everything fit I ommited the Url column.  
+```{r}
+mydatacleaner<-select(mydatacleaner,-("Bulletin URL"))
+```
+
+
+
+
+```{r}
+mydatacleaner
+```
+
+
+
+So the first Variable I want to go into is the Deaths column. 
+    
+    
+```{r}
+ mydatacleaner %>%
+  select(Date,Deaths) %>%
+  filter(Deaths >2270)
+                    
+    
+```
+    
+```{r}
+
+tail(select(mydatacleaner,Date,Deaths),9 )
+  
+
+      
+```
+    
+So looking at head and tail of the date we can see that the deaths reported has increased by 537%; from 361 reported on May 22, 2017, to 2300 on June 3, 2018.To account for such an increase in little over the space of a year the data provides several intra-related variables.  
+   
+The most easy to understand and clearest of the variables is Cases, 
+
+If you look at the data we can see a constant increase in the number of cases reported by the WHO.
+
+
+```{r}
+
+   select(mydatacleaner,Cases,Date) 
+   
+
+```
+
+
+
+
+
+```{r}
+head(select(mydatacleaner,Cases),5)
+tail(select(mydatacleaner,Cases),5)
+```
+Looking at the head and tail you can see that the cases reported has increased 3016% from 35471 at the tail, to over a million at the head of the data frame.
+
+
+
+So now after looking at both columns I want to point the differnce in the increases between the Death and the Cases variables.
+
+
+
+
+
+If we look at from where the Deaths were above 2000 Which is in the 61th row or a little more then a 3rd into when the data-sets reports begin
+```{r}
+ DC <- filter(mydatacleaner, Deaths >2000) 
+tail(select(DC,Date,Cases, Deaths),5)
+head(select(DC,Date,Cases,Deaths),5)
+```
+So see something intresting while the number of cases more than doubled while the death rate went up by about 300,
+
+
+With just those two varibles you would be missing part of the picture. for that there is the attack rate and the cfr which show the interconected rise in lethality and severity.
+
+```{r}
+select(mydatacleaner,Date,AR)
+```
+From [Guidelines foodborne-disease]
+  -An attack rate is defined as the proportion of those who became ill after a specified exposure.
+  In the outbreak setting, the term attack rate is often used as a synonym for risk. It is the risk of getting the disease during a specified period, such as the duration of an outbreak. 
+Overall attack rate is the total number of new cases divided by the total population.
+For example, in an outbreak of gastroenteritis with 50 cases among a population at risk of 2500, the attack rate of disease is
+50/2500 = 0.02, or
+ = 2/100, or
+ = 20/1000
+ So in this example it is out of 1000.And as expected as the disease spread so did the attack rate go up.
+ 
+ 
+So going back to the Deaths varible I showed before in direct connection to that is the CFR. 
+ 
+-Cfr n epidemiology, a case fatality rate (CFR)-or case fatality risk, case fatality ratio or just fatality rate-is the proportion of deaths within a designated population of "cases" (people with a medical condition) over the course of the disease.
+```{r}
+ty<- arrange(mydatacleaner, desc(CFR))
+select(ty,CFR,Date)
+```
+
+So here we somthing that is unique in this data-set mainly:that as the disease progressed
+this variable went down in number. What this shows is that portionally more people got
+infected by the desies but less people died . which is not saying that the deaths went down up
+
+
+
+
+```{r}
+mydatacleaner
+```
+
+ So then Then i took a summary of the numeric variables.
+```{r}
+summarise(mydatacleaner,Cases=mean(Cases),Deaths=mean(Deaths),CFR=mean(CFR),AR=mean(AR))
+```
+
+
+
+
+
+```{r}
+ summarise(mydatacleaner,Cases=median(Cases),Deaths=median(Deaths),CFR=median(CFR),AR=median(AR))
+```
+
+Which correspond roughly to September 3 2017
+
+Finally looking at the last Varaible in our modified Data Frame we get to the column 
+Bulletin Type.
+Thses are all variuos differnet news reports that the WHO issues. In this Data-Set thier are five:
+1.Weekly Epidemiology bulletin
+2.Daily Epidemiology update
+3.Weekly Epidemiology bulletin
+4.Epidemiology bulletin
+5.Daily Epidemiology bulletin
+
+```{r}
+mydatacleaner %>%
+  group_by(`Bulletin Type`) %>% summarise(avg=median(Deaths))
+```
+
+
+
+
+```{r}
+mydatacleaner %>%
+  group_by(`Bulletin Type`) %>% summarise(max=max(Deaths))
+```
+
+
+
+
+
+```{r}
+  mydatacleaner %>%
+  group_by(`Bulletin Type`) %>% summarise(min=min(Deaths))
+```
+
+```{r}
+ ty<-mutate(mydatacleaner, Deaths = Deaths - mean(Deaths))
+ty
+```
+
+
+So in summary we have seen that the while the cholera epedemic increased it was the number of cases not deaths that truly exploded.
